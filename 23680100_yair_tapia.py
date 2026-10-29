@@ -14,6 +14,7 @@ st.set_page_config(layout="wide", page_title="Práctica 4.2 - Regresión", page_
 # 2. Encabezado principal con mejor diseño
 st.title("💧 Panel Interactivo: Predicción del Consumo de Agua (CPC)")
 st.markdown("Dashboard analítico de **Regresión Lineal Múltiple** procesado mediante **DuckDB**.")
+st.markdown("TAPIA VAZQUEZ YAIR GUSTAVO 23680100.")
 st.divider()
 
 # Generación de datos
