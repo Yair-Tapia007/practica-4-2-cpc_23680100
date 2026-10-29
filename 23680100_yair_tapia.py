@@ -8,9 +8,13 @@ import seaborn as sns
 from scipy import stats
 from sklearn.metrics import mean_squared_error, r2_score
 
-# Configuración de la página web
-st.set_page_config(layout="wide", page_title="Práctica 4.2 - Regresión")
-st.title("📊 Panel Interactivo: Predicción del Consumo de Agua (CPC)")
+# 1. Configuración de la página (Icono y layout ancho)
+st.set_page_config(layout="wide", page_title="Práctica 4.2 - Regresión", page_icon="💧")
+
+# 2. Encabezado principal con mejor diseño
+st.title("💧 Panel Interactivo: Predicción del Consumo de Agua (CPC)")
+st.markdown("Dashboard analítico de **Regresión Lineal Múltiple** procesado mediante **DuckDB**.")
+st.divider()
 
 # Generación de datos
 np.random.seed(42)
@@ -28,47 +32,64 @@ con.register('datos_temp', df_simulado)
 con.execute("CREATE TABLE datos_agua AS SELECT * FROM datos_temp")
 df_agua = con.execute("SELECT * FROM datos_agua").df()
 
-st.subheader("--- PASO 1: PRIMEROS 5 REGISTROS OBTENIDOS DE DUCKDB ---")
-st.table(df_agua.head())
+# --- DISEÑO DEL DASHBOARD ---
 
-# Paso 2
-st.subheader("--- PASO 2: MATRIZ DE CORRELACIÓN DE PEARSON (r) ---")
+# PASO 1: Tabla moderna
+st.subheader("🗄️ Paso 1: Base de Datos Generada (DuckDB)")
+# En Streamlit Cloud sí podemos usar el dataframe interactivo
+st.dataframe(df_agua.head(10), use_container_width=True)
+st.divider()
+
+# PASO 2: Matrices de correlación con color
+st.subheader("🔗 Paso 2: Análisis de Correlación")
+col1, col2 = st.columns(2)
 matriz_correlacion = df_agua.corr()
-st.text(matriz_correlacion.to_string())
-st.text(f"\nCorrelación lineal de cada variable con la respuesta 'cpc_consumo':\n{matriz_correlacion['cpc_consumo'].drop('cpc_consumo').to_string()}")
 
-# Entrenamiento del modelo
+with col1:
+    st.markdown("**Matriz de Correlación de Pearson (r)**")
+    # Tabla con gradiente de color automático
+    st.dataframe(matriz_correlacion.style.background_gradient(cmap='coolwarm'), use_container_width=True)
+
+with col2:
+    st.markdown("**Impacto en el Consumo de Agua (cpc_consumo)**")
+    corr_objetivo = matriz_correlacion['cpc_consumo'].drop('cpc_consumo').to_frame()
+    # Gráfica de barras dentro de la tabla
+    st.dataframe(corr_objetivo.style.bar(color=['#d65f5f', '#5fba7d']), use_container_width=True)
+    
+st.divider()
+
+# ENTRENAMIENTO DEL MODELO
 X = sm.add_constant(df_agua[['temperatura_max', 'humedad_max', 'personas_familia', 'consumo_bidon_pc']])
 Y = df_agua['cpc_consumo']
 modelo = sm.OLS(Y, X).fit()
 y_pred = modelo.predict(X)
 residuos = modelo.resid
 
-# Paso 3
-st.subheader("--- PASO 3: RESUMEN DEL MODELO OLS (statsmodels) ---")
-st.text(modelo.summary().as_text())
-
-# Paso 4
-st.subheader("--- PASO 4: DIAGNÓSTICO DE RESIDUOS Y SUPUESTOS ---")
+# PASOS 4 Y 5: MÉTRICAS EN BLOQUES ESTILO KPI
+st.subheader("🎯 Rendimiento y Diagnóstico del Modelo")
 stat, p_value = stats.shapiro(residuos)
 from statsmodels.stats.stattools import durbin_watson
 dw = durbin_watson(residuos)
-
-diag_text = f"1. Prueba de Normalidad (Shapiro-Wilk): Estadístico = {stat:.4f}, valor p = {p_value:.4f}\n"
-if p_value > 0.05:
-    diag_text += "   -> CONCLUSIÓN: Los residuos cumplen con el supuesto de NORMALIDAD (p > 0.05).\n"
-diag_text += f"2. Estadístico Durbin-Watson (Independencia): {dw:.4f}"
-st.text(diag_text)
-
-# Paso 5
-st.subheader("--- PASO 5: MÉTRICAS DE RENDIMIENTO DEL MODELO (scikit-learn) ---")
 r2 = r2_score(Y, y_pred)
 rmse = np.sqrt(mean_squared_error(Y, y_pred))
-st.text(f"Coeficiente de Determinación (R^2):\t{r2*100:.3f}%\nError Cuadrático Medio Raíz (RMSE):\t{rmse:.4f} lt/hab-día")
 
-# Panel Visual
-st.subheader("--- PANEL DE DIAGNÓSTICO VISUAL ---")
-sns.set_theme(style="whitegrid")
+# Mostramos los resultados en 4 columnas con indicadores de estado
+m1, m2, m3, m4 = st.columns(4)
+m1.metric(label="Coef. de Determinación (R²)", value=f"{r2*100:.2f}%", delta="Excelente precisión")
+m2.metric(label="Error Cuadrático (RMSE)", value=f"{rmse:.2f}", delta="- Margen de error", delta_color="inverse")
+m3.metric(label="Shapiro-Wilk (p-valor)", value=f"{p_value:.4f}", delta="Normalidad OK" if p_value > 0.05 else "Revisar")
+m4.metric(label="Durbin-Watson", value=f"{dw:.2f}", delta="Independencia OK" if 1.5 < dw < 2.5 else "Revisar")
+st.divider()
+
+# PASO 3: RESUMEN OLS LIMPIO
+st.subheader("📈 Paso 3: Resumen Estadístico Oficial (OLS)")
+# Encapsulamos el texto flotante en una caja de código delimitada
+st.code(modelo.summary().as_text(), language='plaintext')
+st.divider()
+
+# PANEL VISUAL
+st.subheader("📊 Panel de Diagnóstico Visual")
+sns.set_theme(style="darkgrid") # Adaptado al tema oscuro de Streamlit
 fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 
 sns.heatmap(df_agua.corr(), annot=True, fmt=".2f", cmap="coolwarm", ax=axes[0, 0])
