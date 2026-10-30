@@ -87,13 +87,23 @@ y_pred = modelo.predict(X)
 residuos = modelo.resid
 
 # --- PASO 1 ---
-st.header("PASO 1: Base de Datos Completa (DuckDB)")
-st.info("Pasa el cursor sobre la esquina superior derecha de la tabla para descargar los 100 registros en formato CSV.")
-# Ahora muestra los 100 registros completos
-st.dataframe(df_agua, use_container_width=True, height=400)
+st.header("🗄️ PASO 1: Base de Datos Generada (DuckDB)")
+st.info("Visualizando los primeros 5 registros. Utiliza el botón inferior para exportar la base de datos completa.")
+
+# Muestra solo los primeros 5 registros en pantalla
+st.dataframe(df_agua.head(5), use_container_width=True)
+
+# Botón personalizado para descargar los 100 registros
+csv_completo = df_agua.to_csv(index=False).encode('utf-8')
+st.download_button(
+    label="📥 Descargar CSV Completo (100 registros)",
+    data=csv_completo,
+    file_name='dataset_cpc_practica4_2.csv',
+    mime='text/csv',
+)
 
 # --- PASO 2 ---
-st.header("PASO 2: Matriz de Correlación de Pearson (r)")
+st.header("🔗 PASO 2: Matriz de Correlación de Pearson (r)")
 col1, col2 = st.columns([2, 1])
 matriz_correlacion = df_agua.corr()
 
@@ -106,12 +116,12 @@ with col2:
     st.dataframe(corr_objetivo.style.bar(color='#38bdf8'), use_container_width=True)
 
 # --- PASO 3 ---
-st.header("PASO 3: Resumen del Modelo OLS (Statsmodels)")
+st.header("📈 PASO 3: Resumen del Modelo OLS (Statsmodels)")
 with st.expander("Haz clic aquí para desplegar el reporte estadístico oficial completo", expanded=True):
     st.code(modelo.summary().as_text(), language='plaintext')
 
 # --- PASO 4 ---
-st.header("PASO 4: Diagnóstico de Residuos y Supuestos")
+st.header("🎯 PASO 4: Diagnóstico de Residuos y Supuestos")
 stat, p_value = stats.shapiro(residuos)
 from statsmodels.stats.stattools import durbin_watson
 dw = durbin_watson(residuos)
@@ -130,7 +140,7 @@ with col_diag2:
         st.warning(f"⚠️ **REVISAR INDEPENDENCIA:** \n\nEstadístico = {dw:.4f}")
 
 # --- PASO 5 ---
-st.header(" PASO 5: Métricas de Rendimiento (Scikit-learn)")
+st.header("🚀 PASO 5: Métricas de Rendimiento (Scikit-learn)")
 r2 = r2_score(Y, y_pred)
 rmse = np.sqrt(mean_squared_error(Y, y_pred))
 
@@ -139,7 +149,7 @@ m1.metric(label="Coeficiente de Determinación (R²)", value=f"{r2*100:.2f}%", d
 m2.metric(label="Error Cuadrático Medio Raíz (RMSE)", value=f"{rmse:.4f}", delta="Litros/hab-día", delta_color="inverse")
 
 # --- PANEL VISUAL ---
-st.header(" Panel de Diagnóstico Visual")
+st.header("🖼️ Panel de Diagnóstico Visual")
 plt.style.use('dark_background')
 fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 fig.patch.set_facecolor('#0f172a') 
