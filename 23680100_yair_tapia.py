@@ -14,7 +14,6 @@ st.set_page_config(layout="wide", page_title="Práctica 4.2 - Regresión Múltip
 # --- CSS PARA DISEÑO ELEGANTE (AURORA / DEEP OCEAN) ---
 st.markdown("""
 <style>
-    /* Tarjetas de métricas con degradado elegante */
     div[data-testid="metric-container"] {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border-left: 5px solid #38bdf8;
@@ -22,13 +21,11 @@ st.markdown("""
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
-    /* Texto de los valores */
     div[data-testid="stMetricValue"] {
         color: #f8fafc !important;
         font-weight: 800;
         font-size: 2.4rem;
     }
-    /* Texto de las etiquetas */
     div[data-testid="stMetricLabel"] {
         color: #94a3b8 !important;
         font-weight: 600;
@@ -36,7 +33,6 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    /* Estilo de los encabezados de sección */
     h2 {
         color: #818cf8 !important;
         border-bottom: 1px solid #334155;
@@ -44,7 +40,6 @@ st.markdown("""
         margin-top: 40px;
         margin-bottom: 20px;
     }
-    /* Estilo de la cabecera principal */
     .main-header {
         text-align: center;
         background: linear-gradient(90deg, #38bdf8, #818cf8);
@@ -88,12 +83,10 @@ residuos = modelo.resid
 
 # --- PASO 1 ---
 st.header("🗄️ PASO 1: Base de Datos Generada (DuckDB)")
-st.info("Visualizando los primeros 5 registros. Utiliza el botón inferior para exportar la base de datos completa.")
+st.markdown("> **¿Qué sucede aquí?** Generamos 100 registros virtuales de factores climáticos y demográficos para simular escenarios de consumo de agua (CPC). Posteriormente, utilizamos **DuckDB**, un motor de base de datos analítico ultrarrápido en memoria, para registrar y gestionar esta información mediante consultas SQL como si fuera una base de datos real.")
 
-# Muestra solo los primeros 5 registros en pantalla
 st.dataframe(df_agua.head(5), use_container_width=True)
 
-# Botón personalizado para descargar los 100 registros
 csv_completo = df_agua.to_csv(index=False).encode('utf-8')
 st.download_button(
     label="📥 Descargar CSV Completo (100 registros)",
@@ -104,6 +97,8 @@ st.download_button(
 
 # --- PASO 2 ---
 st.header("🔗 PASO 2: Matriz de Correlación de Pearson (r)")
+st.markdown("> **¿Qué sucede aquí?** Calculamos el coeficiente de Pearson para medir la fuerza de la relación lineal entre todas nuestras variables. Nos interesa especialmente la columna del impacto en el Consumo (CPC) para descubrir matemáticamente qué factores aumentan o disminuyen la demanda de agua.")
+
 col1, col2 = st.columns([2, 1])
 matriz_correlacion = df_agua.corr()
 
@@ -117,11 +112,15 @@ with col2:
 
 # --- PASO 3 ---
 st.header("📈 PASO 3: Resumen del Modelo OLS (Statsmodels)")
+st.markdown("> **¿Qué sucede aquí?** Entrenamos el modelo predictivo utilizando el método de Mínimos Cuadrados Ordinarios (OLS). Este extenso reporte estadístico nos proporciona los coeficientes exactos (pesos) de cada variable, los cuales formarán la ecuación algebraica final capaz de predecir futuros consumos.")
+
 with st.expander("Haz clic aquí para desplegar el reporte estadístico oficial completo", expanded=True):
     st.code(modelo.summary().as_text(), language='plaintext')
 
 # --- PASO 4 ---
 st.header("🎯 PASO 4: Diagnóstico de Residuos y Supuestos")
+st.markdown("> **¿Qué sucede aquí?** Para que un modelo de regresión lineal sea matemáticamente válido, sus errores (residuos) deben comportarse de cierta forma. Utilizamos la prueba de **Shapiro-Wilk** para verificar que los errores se distribuyan normalmente (como una campana de Gauss) y el estadístico de **Durbin-Watson** para confirmar que cada error es independiente del anterior.")
+
 stat, p_value = stats.shapiro(residuos)
 from statsmodels.stats.stattools import durbin_watson
 dw = durbin_watson(residuos)
@@ -140,7 +139,9 @@ with col_diag2:
         st.warning(f"⚠️ **REVISAR INDEPENDENCIA:** \n\nEstadístico = {dw:.4f}")
 
 # --- PASO 5 ---
-st.header("🚀 PASO 5: Métricas de Rendimiento (Scikit-learn)")
+st.header("🚀 PASO 5: Métricas y Diagnóstico Visual")
+st.markdown("> **¿Qué sucede aquí?** Evaluamos la precisión final de la aplicación. El **R²** indica el porcentaje del comportamiento del agua que nuestro modelo logra explicar, mientras que el **RMSE** nos da el margen de error promedio en litros reales. Finalmente, el panel de gráficas nos confirma visualmente el cumplimiento de la homocedasticidad y la normalidad.")
+
 r2 = r2_score(Y, y_pred)
 rmse = np.sqrt(mean_squared_error(Y, y_pred))
 
@@ -149,7 +150,6 @@ m1.metric(label="Coeficiente de Determinación (R²)", value=f"{r2*100:.2f}%", d
 m2.metric(label="Error Cuadrático Medio Raíz (RMSE)", value=f"{rmse:.4f}", delta="Litros/hab-día", delta_color="inverse")
 
 # --- PANEL VISUAL ---
-st.header("🖼️ Panel de Diagnóstico Visual")
 plt.style.use('dark_background')
 fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 fig.patch.set_facecolor('#0f172a') 
